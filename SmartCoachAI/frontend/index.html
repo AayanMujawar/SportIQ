@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SportIQ — AI-Powered Cricket Performance Analyzer. Upload a cricket video and get instant pose estimation with skeleton overlay using MediaPipe and computer vision.">
+  <meta name="keywords" content="cricket, AI, pose estimation, MediaPipe, sports analytics, performance analyzer, skeleton tracking">
+  <meta name="author" content="Team SportIQ">
+  <meta name="theme-color" content="#06070a">
+
+  <title>SportIQ — AI-Powered Cricket Performance Analyzer</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  Navigation                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-content">
+      <a href="#" class="nav-brand">
+        <img src="assets/logo.png" alt="SportIQ Logo" class="nav-logo">
+        <div>
+          <div class="nav-title">SportIQ</div>
+          <div class="nav-subtitle">Cricket Analyzer</div>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="#upload" class="nav-link">Analyze</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="https://github.com" target="_blank" class="nav-github" id="github-link">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  Hero Section                                               -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            AI-Powered Analysis
+          </div>
+
+          <h1 class="hero-title">
+            Analyze Your<br>
+            <span class="highlight">Cricket Shots</span><br>
+            With <span class="highlight-2">AI Precision</span>
+          </h1>
+
+          <p class="hero-description">
+            Upload any cricket video and our AI instantly detects body pose, 
+            draws a skeleton overlay, and extracts keypoint data — all powered 
+            by MediaPipe computer vision.
+          </p>
+
+          <div class="hero-actions">
+            <a href="#upload" class="btn btn-primary btn-lg">
+              <span class="btn-icon">🏏</span>
+              Start Analyzing
+            </a>
+            <a href="#features" class="btn btn-secondary btn-lg">
+              <span class="btn-icon">✨</span>
+              Learn More
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-image-wrapper">
+          <div class="hero-image-glow"></div>
+          <img src="assets/cricket-hero.png" alt="Cricket pose estimation with AI skeleton overlay" class="hero-image">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  Upload Section                                             -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section class="section" id="upload">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span>📤</span> Upload & Analyze
+        </div>
+        <h2 class="section-title">Upload Your Cricket Video</h2>
+        <p class="section-subtitle">
+          Drop your video below and let our AI detect body pose landmarks 
+          with real-time skeleton overlay
+        </p>
+      </div>
+
+      <div id="upload-section">
+        <div class="upload-card">
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="drop-zone">
+            <span class="drop-zone-icon">🎬</span>
+            <div class="drop-zone-title">Drag & drop your video here</div>
+            <div class="drop-zone-subtitle">or click to browse files</div>
+            <div class="drop-zone-formats">
+              <span class="format-tag">.MP4</span>
+              <span class="format-tag">.AVI</span>
+              <span class="format-tag">.MOV</span>
+              <span class="format-tag">.WEBM</span>
+              <span class="format-tag">.MKV</span>
+            </div>
+            <input type="file" id="file-input" accept="video/*" hidden>
+          </div>
+
+          <!-- File Preview -->
+          <div class="file-preview" id="file-preview">
+            <span class="file-preview-icon">🎥</span>
+            <div class="file-preview-info">
+              <div class="file-preview-name" id="file-preview-name">—</div>
+              <div class="file-preview-size" id="file-preview-size">—</div>
+            </div>
+            <button class="file-preview-remove" id="file-remove-btn" title="Remove file">✕</button>
+          </div>
+
+          <!-- Options -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="sport-select">Sport Type</label>
+              <select class="form-select" id="sport-select">
+                <option value="cricket" selected>🏏 Cricket</option>
+                <option value="football" disabled>⚽ Football (Coming Soon)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="shot-select">Shot Type</label>
+              <select class="form-select" id="shot-select">
+                <option value="other" selected>Auto Detect</option>
+                <option value="cover_drive">Cover Drive</option>
+                <option value="straight_drive">Straight Drive</option>
+                <option value="pull_shot">Pull Shot</option>
+                <option value="cut_shot">Cut Shot</option>
+                <option value="sweep_shot">Sweep Shot</option>
+                <option value="defensive_block">Defensive Block</option>
+                <option value="lofted_shot">Lofted Shot</option>
+                <option value="flick_shot">Flick Shot</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Upload Button -->
+          <div class="upload-btn-wrapper">
+            <button class="btn btn-primary btn-upload" id="upload-btn" disabled>
+              <span class="btn-icon">⚡</span>
+              Analyze with AI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Processing State ──────────────────────────────── -->
+      <div class="processing-section" id="processing-section">
+        <div class="processing-animation">
+          <div class="processing-ring"></div>
+          <div class="processing-ring"></div>
+          <div class="processing-ring"></div>
+          <div class="skeleton-figure">
+            <span class="skeleton-icon">🦴</span>
+          </div>
+        </div>
+
+        <h3 class="processing-title">Analyzing Your Video</h3>
+        <p class="processing-status" id="processing-status">
+          Initializing AI model<span class="processing-dots"></span>
+        </p>
+
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <!-- ── Results Section ───────────────────────────────── -->
+      <div class="results-section" id="results-section">
+        <div class="section-header">
+          <div class="section-label">
+            <span>🎯</span> Analysis Results
+          </div>
+          <h2 class="section-title">Pose Estimation Complete</h2>
+          <p class="section-subtitle">
+            Compare the original video with the AI-generated skeleton overlay
+          </p>
+        </div>
+
+        <!-- Video Comparison -->
+        <div class="results-grid">
+          <div class="video-card">
+            <div class="video-card-header">
+              <span class="video-card-label original">📹 Original Video</span>
+            </div>
+            <div class="video-wrapper">
+              <video id="original-video" controls style="display:none;"></video>
+              <div class="video-placeholder">
+                <span class="video-placeholder-icon">📹</span>
+                Original video
+              </div>
+            </div>
+          </div>
+
+          <div class="video-card">
+            <div class="video-card-header">
+              <span class="video-card-label processed">🦴 AI Skeleton Overlay</span>
+              <span class="video-card-badge ai">AI Processed</span>
+            </div>
+            <div class="video-wrapper">
+              <video id="processed-video" controls style="display:none;"></video>
+              <div class="video-placeholder">
+                <span class="video-placeholder-icon">🦴</span>
+                Processed video with skeleton
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">🎞️</span>
+            <div class="stat-value teal" id="stat-frames">0</div>
+            <div class="stat-label">Total Frames</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🎯</span>
+            <div class="stat-value green" id="stat-detection">0%</div>
+            <div class="stat-label">Detection Rate</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⚡</span>
+            <div class="stat-value amber" id="stat-time">0s</div>
+            <div class="stat-label">Processing Time</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📊</span>
+            <div class="stat-value indigo" id="stat-fps">0</div>
+            <div class="stat-label">Video FPS</div>
+          </div>
+        </div>
+
+        <!-- Future Features Preview -->
+        <div class="future-features">
+          <div class="future-card">
+            <span class="future-card-icon">📐</span>
+            <div>
+              <div class="future-card-title">Shot Comparison Score</div>
+              <div class="future-card-desc">Compare your technique against ideal reference shots</div>
+            </div>
+          </div>
+          <div class="future-card">
+            <span class="future-card-icon">💡</span>
+            <div>
+              <div class="future-card-title">AI Coaching Feedback</div>
+              <div class="future-card-desc">Get personalized tips to improve your batting form</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Analysis Button -->
+        <div class="new-analysis-wrapper">
+          <button class="btn btn-secondary btn-lg" id="new-analysis-btn">
+            <span class="btn-icon">🔄</span>
+            Analyze Another Video
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  Features Section                                           -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">
+          <span>⚡</span> Capabilities
+        </div>
+        <h2 class="section-title">How SportIQ Works</h2>
+        <p class="section-subtitle">
+          Powered by MediaPipe and OpenCV for real-time body pose analysis
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🎥</span>
+          <h3 class="feature-title">Video Upload</h3>
+          <p class="feature-desc">
+            Simply drag and drop your cricket video or browse to upload. 
+            Supports MP4, AVI, MOV, WEBM formats up to 50MB.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🦴</span>
+          <h3 class="feature-title">Pose Estimation</h3>
+          <p class="feature-desc">
+            MediaPipe detects 33 body landmarks per frame — shoulders, elbows, 
+            wrists, hips, knees, ankles — with high precision.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🎨</span>
+          <h3 class="feature-title">Skeleton Overlay</h3>
+          <p class="feature-desc">
+            Color-coded skeleton drawn on every frame — green for upper body, 
+            cyan for torso, orange for legs. Cricket-optimized visualization.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h3 class="feature-title">Keypoint Data</h3>
+          <p class="feature-desc">
+            All keypoint coordinates exported as structured JSON — ready for 
+            analysis, comparison, and next semester's scoring engine.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📐</span>
+          <h3 class="feature-title">Angle Analysis</h3>
+          <p class="feature-desc">
+            Calculates cricket-specific joint angles — elbow bend, knee flex, 
+            shoulder rotation — the foundation for technique scoring.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔬</span>
+          <h3 class="feature-title">Side-by-Side View</h3>
+          <p class="feature-desc">
+            Compare original and processed videos side by side. See exactly 
+            where the AI detected your body pose landmarks.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!--  Footer                                                     -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <img src="assets/logo.png" alt="SportIQ" class="footer-logo">
+          <div class="footer-text">
+            <strong>SportIQ</strong> — AI-Powered Cricket Performance Analyzer
+          </div>
+        </div>
+
+        <div class="footer-tech">
+          Built with
+          <span class="tech-badge">Python</span>
+          <span class="tech-badge">MediaPipe</span>
+          <span class="tech-badge">FastAPI</span>
+          <span class="tech-badge">OpenCV</span>
+        </div>
+
+        <div class="footer-links">
+          <a href="https://github.com" target="_blank" class="footer-link">GitHub</a>
+          <a href="#" class="footer-link">Documentation</a>
+          <a href="#" class="footer-link">API Docs</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+</body>
+</html>
