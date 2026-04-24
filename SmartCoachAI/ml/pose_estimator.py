@@ -13,6 +13,7 @@ import logging
 from .skeleton_drawer import SkeletonDrawer
 from .keypoint_extractor import KeypointExtractor
 from .angle_calculator import AngleCalculator
+from .posture_comparator import PostureComparator
 from .utils import get_video_info, create_video_writer, resize_frame, ensure_directory
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,10 @@ def process_video(
         fps=video_info["fps"],
     )
     angle_calculator = AngleCalculator()
+    posture_comparator = PostureComparator()
+    
+    # Store user angle ranges
+    user_ranges = {k: {"min": float('inf'), "max": float('-inf')} for k in angle_calculator.CRICKET_ANGLES.keys()}
 
     # ── Open input video ──────────────────────────────────────
     cap = cv2.VideoCapture(input_path)
@@ -162,6 +167,16 @@ def process_video(
                     keypoint_extractor.extract_frame_keypoints(
                         results.pose_landmarks, total_frames - 1
                     )
+                    
+                # Track user Min/Max angles
+                angles = angle_calculator.calculate_cricket_angles(results.pose_landmarks)
+                for angle_name, angle_data in angles.items():
+                    val = angle_data.get("angle_degrees")
+                    if val is not None and angle_data.get("status") == "ok":
+                        if val < user_ranges[angle_name]["min"]:
+                            user_ranges[angle_name]["min"] = val
+                        if val > user_ranges[angle_name]["max"]:
+                            user_ranges[angle_name]["max"] = val
 
             # Write frame to output (with or without skeleton)
             writer.write(frame)
@@ -181,6 +196,15 @@ def process_video(
     processing_time = round(time.time() - start_time, 2)
     detection_rate = round(frames_with_pose / total_frames * 100, 1) if total_frames > 0 else 0
 
+    # Clean up unrecorded user max limits
+    final_user_ranges = {}
+    for k, v in user_ranges.items():
+        if v["min"] != float('inf') and v["max"] != float('-inf'):
+            final_user_ranges[k] = v
+
+    # Calculate final Error Rate
+    posture_error_rate = posture_comparator.calculate_error_rate(final_user_ranges)
+
     result = {
         "output_video_path": output_video_path,
         "keypoints_json_path": keypoints_json_path,
@@ -194,6 +218,7 @@ def process_video(
             "fps": video_info["fps"],
             "duration_seconds": video_info["duration_seconds"],
         },
+        "posture_error_rate": posture_error_rate,
     }
 
     logger.info(

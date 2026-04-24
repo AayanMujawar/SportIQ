@@ -143,6 +143,7 @@ async def upload_video(
                     "processed_resolution": result["video_info"]["processed_resolution"],
                     "fps": result["video_info"]["fps"],
                     "duration_seconds": result["video_info"]["duration_seconds"],
+                    "posture_error_rate": result.get("posture_error_rate", 0.0),
                 },
             },
         }

@@ -1346,6 +1346,13 @@ body::after {
   background: var(--text-muted);
 }
 
+/* ── Colors overrides for Stat Text ────────────────────────────────────────────── */
+.stat-value.red { color: var(--accent-red); }
+.stat-value.teal { color: var(--accent-primary); }
+.stat-value.green { color: var(--accent-green); }
+.stat-value.amber { color: var(--accent-amber); }
+.stat-value.indigo { color: var(--accent-secondary); }
+
 /* ── Selection ────────────────────────────────────────────────── */
 ::selection {
   background: rgba(var(--accent-primary-rgb), 0.3);

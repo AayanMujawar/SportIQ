@@ -56,6 +56,7 @@ function cacheDOMElements() {
   DOM.resultsSection = document.getElementById('results-section');
   DOM.originalVideo = document.getElementById('original-video');
   DOM.processedVideo = document.getElementById('processed-video');
+  DOM.statErrorRate = document.getElementById('stat-errorrate');
   DOM.statFrames = document.getElementById('stat-frames');
   DOM.statDetection = document.getElementById('stat-detection');
   DOM.statTime = document.getElementById('stat-time');
@@ -313,6 +314,7 @@ function displayResults(data) {
   // Update stats with count-up animation
   const stats = data.stats;
   if (stats) {
+    if (DOM.statErrorRate) animateValue(DOM.statErrorRate, 0, stats.posture_error_rate || 0, 1000, '%');
     animateValue(DOM.statFrames, 0, stats.total_frames || 0, 1000);
     animateValue(DOM.statDetection, 0, stats.detection_rate_percent || 0, 1000, '%');
     animateValue(DOM.statTime, 0, stats.processing_time_seconds || 0, 1000, 's');
@@ -390,6 +392,7 @@ function resetToUpload() {
   if (procPlaceholder) procPlaceholder.style.display = 'block';
 
   // Reset stats
+  if (DOM.statErrorRate) DOM.statErrorRate.textContent = '0%';
   DOM.statFrames.textContent = '0';
   DOM.statDetection.textContent = '0%';
   DOM.statTime.textContent = '0s';
