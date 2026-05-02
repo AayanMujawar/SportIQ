@@ -53,19 +53,19 @@
         <div class="hero-text">
           <div class="hero-badge">
             <span class="pulse-dot"></span>
-            AI-Powered Analysis
+            Expert Performance Analysis
           </div>
 
           <h1 class="hero-title">
             Analyze Your<br>
             <span class="highlight">Cricket Shots</span><br>
-            With <span class="highlight-2">AI Precision</span>
+            With <span class="highlight-2">Professional Insight</span>
           </h1>
 
           <p class="hero-description">
-            Upload any cricket video and our AI instantly detects body pose, 
-            draws a skeleton overlay, and extracts keypoint data — all powered 
-            by MediaPipe computer vision.
+            Upload any cricket video and our system instantly detects your body posture, 
+            provides a helpful skeleton overlay, and extracts key biomechanical data 
+            to help you improve your game safely.
           </p>
 
           <div class="hero-actions">
@@ -99,8 +99,8 @@
         </div>
         <h2 class="section-title">Upload Your Cricket Video</h2>
         <p class="section-subtitle">
-          Drop your video below and let our AI detect body pose landmarks 
-          with real-time skeleton overlay
+          Drop your video below and let our system track your body posture 
+          with a real-time skeleton overlay
         </p>
       </div>
 
@@ -141,7 +141,7 @@
               </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="display: none;">
               <label class="form-label" for="shot-select">Shot Type</label>
               <select class="form-select" id="shot-select">
                 <option value="other" selected>Auto Detect</option>
@@ -161,7 +161,7 @@
           <div class="upload-btn-wrapper">
             <button class="btn btn-primary btn-upload" id="upload-btn" disabled>
               <span class="btn-icon">⚡</span>
-              Analyze with AI
+              Analyze Posture
             </button>
           </div>
         </div>
@@ -174,13 +174,13 @@
           <div class="processing-ring"></div>
           <div class="processing-ring"></div>
           <div class="skeleton-figure">
-            <span class="skeleton-icon">🦴</span>
+            <span class="skeleton-icon">🏏</span>
           </div>
         </div>
 
         <h3 class="processing-title">Analyzing Your Video</h3>
         <p class="processing-status" id="processing-status">
-          Initializing AI model<span class="processing-dots"></span>
+          Initializing analysis<span class="processing-dots"></span>
         </p>
 
         <div class="progress-bar-wrapper">
@@ -188,19 +188,22 @@
         </div>
       </div>
 
-      <!-- ── Results Section ───────────────────────────────── -->
+      <!-- ═══════════════════════════════════════════════════════ -->
+      <!--  RESULTS DASHBOARD (50% Project Output)                 -->
+      <!-- ═══════════════════════════════════════════════════════ -->
       <div class="results-section" id="results-section">
+
+        <!-- ── Video Comparison (Side-by-Side) ───────────────── -->
         <div class="section-header">
           <div class="section-label">
-            <span>🎯</span> Analysis Results
+            <span>🎯</span> Video Comparison
           </div>
-          <h2 class="section-title">Pose Estimation Complete</h2>
+          <h2 class="section-title">Original vs AI Skeleton</h2>
           <p class="section-subtitle">
-            Compare the original video with the AI-generated skeleton overlay
+            Compare your input video with the enhanced skeleton overlay
           </p>
         </div>
 
-        <!-- Video Comparison -->
         <div class="results-grid">
           <div class="video-card">
             <div class="video-card-header">
@@ -217,8 +220,8 @@
 
           <div class="video-card">
             <div class="video-card-header">
-              <span class="video-card-label processed">🦴 AI Skeleton Overlay</span>
-              <span class="video-card-badge ai">AI Processed</span>
+              <span class="video-card-label processed">🦴 Skeleton Overlay</span>
+              <span class="video-card-badge ai">Processed</span>
             </div>
             <div class="video-wrapper">
               <video id="processed-video" controls style="display:none;"></video>
@@ -230,8 +233,96 @@
           </div>
         </div>
 
-        <!-- Stats -->
-        <div class="stats-grid">
+        <!-- Sync playback button -->
+        <div class="video-sync-wrapper">
+          <button class="btn btn-secondary" id="sync-play-btn">
+            <span class="btn-icon">▶️</span> Play Both Videos in Sync
+          </button>
+        </div>
+
+        <!-- ── Dashboard Header: Shot + Grade + Score ────────── -->
+        <div class="dashboard-header" id="dashboard-header" style="margin-top: 3rem;">
+          <div class="dash-shot-badge" id="dash-shot-badge" style="display:none;">
+            <span class="dash-shot-icon" id="dash-shot-icon">🏏</span>
+            <div>
+              <div class="dash-shot-name" id="dash-shot-name">Cricket Shot</div>
+              <div class="dash-shot-method" id="dash-shot-method">Auto Detected</div>
+            </div>
+          </div>
+
+          <div class="dash-score-gauge" id="dash-score-gauge">
+            <canvas id="gauge-canvas" width="180" height="180"></canvas>
+            <div class="gauge-label">
+              <div class="gauge-value" id="gauge-value">0%</div>
+              <div class="gauge-text">Posture Score</div>
+            </div>
+          </div>
+
+          <div class="dash-grade-badge" id="dash-grade-badge">
+            <div class="grade-letter" id="grade-letter">—</div>
+            <div class="grade-label">Performance Grade</div>
+          </div>
+        </div>
+
+        <!-- ── Joint-by-Joint Analysis Panel ─────────────────── -->
+        <div class="section-header" style="margin-top: var(--space-3xl);">
+          <div class="section-label">
+            <span>📊</span> Joint Analysis
+          </div>
+          <h2 class="section-title">Per-Joint Breakdown</h2>
+          <p class="section-subtitle">
+            Detailed error analysis for each body joint compared to professional form
+          </p>
+        </div>
+
+        <div class="joint-analysis-panel">
+          <!-- Radar Chart -->
+          <div class="radar-chart-card">
+            <div class="radar-chart-title">Joint Score Radar</div>
+            <canvas id="radar-canvas" width="320" height="320"></canvas>
+          </div>
+
+          <!-- Joint Progress Bars -->
+          <div class="joint-bars-card" id="joint-bars-container">
+            <!-- Populated dynamically by JS -->
+            <div class="joint-bars-placeholder">
+              Processing joint data...
+            </div>
+          </div>
+        </div>
+
+        <!-- ── AI Coaching Tips Panel ────────────────────────── -->
+        <div class="section-header" style="margin-top: var(--space-3xl);">
+          <div class="section-label">
+            <span>💡</span> Expert Coaching
+          </div>
+          <h2 class="section-title">Improvement Tips</h2>
+          <p class="section-subtitle">
+            Personalized coaching and injury prevention suggestions based on your posture
+          </p>
+        </div>
+
+        <div class="coaching-grid" id="coaching-grid">
+          <!-- Populated dynamically by JS -->
+        </div>
+
+        <!-- ── Angle Timeline Panel (Hidden for minimal output) ── -->
+        <div class="section-header" style="margin-top: var(--space-3xl); display: none;">
+          <div class="section-label">
+            <span>📈</span> Angle Timeline
+          </div>
+          <h2 class="section-title">Joint Angle Over Time</h2>
+          <p class="section-subtitle">
+            How your key joint angles changed throughout the video
+          </p>
+        </div>
+
+        <div class="timeline-panel" id="timeline-panel" style="display: none;">
+          <!-- Populated dynamically by JS with sparkline canvases -->
+        </div>
+
+        <!-- ── Stats Row (Hidden for minimal output) ─────────── -->
+        <div class="stats-grid" style="margin-top: var(--space-3xl); display: none;">
           <div class="stat-card">
             <span class="stat-icon">⚠️</span>
             <div class="stat-value red" id="stat-errorrate">0%</div>
@@ -259,39 +350,26 @@
           </div>
         </div>
 
-        <!-- Future Features Preview -->
-        <div class="future-features">
-          <div class="future-card">
-            <span class="future-card-icon">📐</span>
-            <div>
-              <div class="future-card-title">Shot Comparison Score</div>
-              <div class="future-card-desc">Compare your technique against ideal reference shots</div>
-            </div>
-          </div>
-          <div class="future-card">
-            <span class="future-card-icon">💡</span>
-            <div>
-              <div class="future-card-title">AI Coaching Feedback</div>
-              <div class="future-card-desc">Get personalized tips to improve your batting form</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- New Analysis Button -->
-        <div class="new-analysis-wrapper">
-          <button class="btn btn-secondary btn-lg" id="new-analysis-btn">
+        <!-- ── Action Buttons ────────────────────────────────── -->
+        <div class="results-actions">
+          <button class="btn btn-secondary btn-lg" id="download-report-btn">
+            <span class="btn-icon">📥</span>
+            Download Report (JSON)
+          </button>
+          <button class="btn btn-primary btn-lg" id="new-analysis-btn">
             <span class="btn-icon">🔄</span>
             Analyze Another Video
           </button>
         </div>
       </div>
+
     </div>
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!--  Features Section                                           -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <section class="section" id="features">
+  <section class="section" id="features" style="display:none;">
     <div class="container">
       <div class="section-header">
         <div class="section-label">
@@ -299,7 +377,7 @@
         </div>
         <h2 class="section-title">How SportIQ Works</h2>
         <p class="section-subtitle">
-          Powered by MediaPipe and OpenCV for real-time body pose analysis
+          Using advanced computer vision to provide real-time, human-like coaching feedback
         </p>
       </div>
 
@@ -333,28 +411,28 @@
 
         <div class="feature-card">
           <span class="feature-icon">📊</span>
-          <h3 class="feature-title">Keypoint Data</h3>
+          <h3 class="feature-title">Per-Joint Analysis</h3>
           <p class="feature-desc">
-            All keypoint coordinates exported as structured JSON — ready for 
-            analysis, comparison, and next semester's scoring engine.
+            Every joint scored individually against professional reference form.
+            Radar chart and progress bars show exactly where to improve.
+          </p>
+        </div>
+
+        <div class="feature-card" style="display: none;">
+          <span class="feature-icon">🏏</span>
+          <h3 class="feature-title">Shot Detection</h3>
+          <p class="feature-desc">
+            AI identifies your cricket shot type — cover drive, pull shot, 
+            sweep, defensive block — using joint angle pattern analysis.
           </p>
         </div>
 
         <div class="feature-card">
-          <span class="feature-icon">📐</span>
-          <h3 class="feature-title">Angle Analysis</h3>
+          <span class="feature-icon">💡</span>
+          <h3 class="feature-title">AI Coaching Tips</h3>
           <p class="feature-desc">
-            Calculates cricket-specific joint angles — elbow bend, knee flex, 
-            shoulder rotation — the foundation for technique scoring.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-icon">🔬</span>
-          <h3 class="feature-title">Side-by-Side View</h3>
-          <p class="feature-desc">
-            Compare original and processed videos side by side. See exactly 
-            where the AI detected your body pose landmarks.
+            Get personalized improvement suggestions for each body joint.
+            Tips are generated based on your specific deviations from ideal form.
           </p>
         </div>
       </div>

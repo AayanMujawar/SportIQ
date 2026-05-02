@@ -2,6 +2,9 @@
 SportIQ — Pose Estimator (Core Pipeline)
 Orchestrates MediaPipe pose estimation on cricket videos.
 Draws skeleton overlays and extracts keypoint data.
+
+Enhanced for 50% project: integrates shot classification,
+collects per-frame angle timelines, and returns detailed analysis.
 """
 
 import cv2
@@ -14,6 +17,7 @@ from .skeleton_drawer import SkeletonDrawer
 from .keypoint_extractor import KeypointExtractor
 from .angle_calculator import AngleCalculator
 from .posture_comparator import PostureComparator
+from .shot_classifier import ShotClassifier
 from .utils import get_video_info, create_video_writer, resize_frame, ensure_directory
 
 logger = logging.getLogger(__name__)
@@ -32,6 +36,7 @@ def process_video(
     extract_keypoints: bool = True,
     max_width: int = 1280,
     max_height: int = 720,
+    shot_type: str = "other",
 ) -> dict:
     """
     Process a cricket video with MediaPipe pose estimation.
@@ -41,7 +46,10 @@ def process_video(
       2. Runs MediaPipe Pose on each frame
       3. Draws skeleton overlay (optional)
       4. Extracts keypoint coordinates to JSON (optional)
-      5. Saves the processed output video
+      5. Classifies the shot type from angle patterns
+      6. Generates detailed posture analysis with per-joint breakdown
+      7. Collects angle timeline for visualization
+      8. Saves the processed output video
     
     Args:
         input_path: Path to the input video file.
@@ -53,6 +61,7 @@ def process_video(
         extract_keypoints: Whether to extract and save keypoints to JSON.
         max_width: Maximum frame width for processing.
         max_height: Maximum frame height for processing.
+        shot_type: User-selected shot type (used as fallback for classifier).
         
     Returns:
         Dictionary with processing results:
@@ -64,6 +73,10 @@ def process_video(
             "detection_rate": float,
             "processing_time_seconds": float,
             "video_info": dict,
+            "posture_error_rate": float,
+            "detailed_analysis": dict,
+            "shot_classification": dict,
+            "angle_timeline": dict,
         }
         
     Raises:
@@ -94,9 +107,15 @@ def process_video(
     )
     angle_calculator = AngleCalculator()
     posture_comparator = PostureComparator()
+    shot_classifier = ShotClassifier()
     
     # Store user angle ranges
     user_ranges = {k: {"min": float('inf'), "max": float('-inf')} for k in angle_calculator.CRICKET_ANGLES.keys()}
+    
+    # ── Angle timeline data (sampled) ─────────────────────────
+    # Store per-frame angles for key joints (sampled to reduce data size)
+    angle_timeline = {k: [] for k in angle_calculator.CRICKET_ANGLES.keys()}
+    SAMPLE_INTERVAL = max(1, int(video_info["fps"] / 5))  # ~5 samples per second
 
     # ── Open input video ──────────────────────────────────────
     cap = cv2.VideoCapture(input_path)
@@ -168,15 +187,24 @@ def process_video(
                         results.pose_landmarks, total_frames - 1
                     )
                     
-                # Track user Min/Max angles
+                # Calculate angles for this frame
                 angles = angle_calculator.calculate_cricket_angles(results.pose_landmarks)
+                
                 for angle_name, angle_data in angles.items():
                     val = angle_data.get("angle_degrees")
                     if val is not None and angle_data.get("status") == "ok":
+                        # Track user Min/Max angles
                         if val < user_ranges[angle_name]["min"]:
                             user_ranges[angle_name]["min"] = val
                         if val > user_ranges[angle_name]["max"]:
                             user_ranges[angle_name]["max"] = val
+                        
+                        # Collect timeline samples
+                        if (total_frames - 1) % SAMPLE_INTERVAL == 0:
+                            angle_timeline[angle_name].append({
+                                "frame": total_frames - 1,
+                                "value": round(val, 1),
+                            })
 
             # Write frame to output (with or without skeleton)
             writer.write(frame)
@@ -202,8 +230,18 @@ def process_video(
         if v["min"] != float('inf') and v["max"] != float('-inf'):
             final_user_ranges[k] = v
 
-    # Calculate final Error Rate
-    posture_error_rate = posture_comparator.calculate_error_rate(final_user_ranges)
+    # ── Calculate detailed posture analysis ───────────────────
+    detailed_analysis = posture_comparator.calculate_detailed_analysis(final_user_ranges)
+    posture_error_rate = detailed_analysis["overall_error_rate"]
+    
+    # ── Classify shot type ────────────────────────────────────
+    shot_classification = shot_classifier.classify_shot(final_user_ranges, shot_type)
+    
+    # ── Clean up timeline (remove empty joints) ──────────────
+    clean_timeline = {}
+    for joint_name, data_points in angle_timeline.items():
+        if data_points:
+            clean_timeline[joint_name] = data_points
 
     result = {
         "output_video_path": output_video_path,
@@ -219,11 +257,16 @@ def process_video(
             "duration_seconds": video_info["duration_seconds"],
         },
         "posture_error_rate": posture_error_rate,
+        "detailed_analysis": detailed_analysis,
+        "shot_classification": shot_classification,
+        "angle_timeline": clean_timeline,
     }
 
     logger.info(
         f"✅ Processing complete: {total_frames} frames, "
         f"{frames_with_pose} with pose ({detection_rate}%), "
+        f"shot: {shot_classification['display_name']}, "
+        f"grade: {detailed_analysis['performance_grade']}, "
         f"took {processing_time}s"
     )
 

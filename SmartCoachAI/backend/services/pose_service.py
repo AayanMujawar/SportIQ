@@ -37,13 +37,14 @@ class PoseService:
         os.makedirs(PROCESSED_DIR, exist_ok=True)
         logger.info(f"PoseService initialized. Output dir: {PROCESSED_DIR}")
 
-    def process_cricket_video(self, input_path: str, sport: str = "cricket") -> dict:
+    def process_cricket_video(self, input_path: str, sport: str = "cricket", shot_type: str = "other") -> dict:
         """
         Process an uploaded cricket video through the pose estimation pipeline.
         
         Args:
             input_path: Path to the uploaded video file.
             sport: Sport type (currently only 'cricket' supported).
+            shot_type: User-selected shot type (used as fallback for classifier).
             
         Returns:
             Dictionary with processing results including output paths and stats.
@@ -72,6 +73,7 @@ class PoseService:
                 extract_keypoints=True,
                 max_width=MAX_PROCESS_WIDTH,
                 max_height=MAX_PROCESS_HEIGHT,
+                shot_type=shot_type,
             )
 
             # Add output filenames for URL construction

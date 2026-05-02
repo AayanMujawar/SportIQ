@@ -1,6 +1,9 @@
 """
 SportIQ — Video API Router
 Handles video upload, processing, and serving endpoints.
+
+Enhanced for 50% project: returns detailed per-joint analysis,
+shot classification, coaching tips, and angle timelines.
 """
 
 import os
@@ -59,7 +62,8 @@ async def upload_video(
     **Max file size:** 50MB  
     **Supported sports:** cricket (football coming next semester)
     
-    Returns the URL of the processed video and processing statistics.
+    Returns the URL of the processed video, processing statistics,
+    per-joint analysis, shot classification, and coaching tips.
     """
     # ── Validate sport type ───────────────────────────────────
     if sport not in SUPPORTED_SPORTS:
@@ -119,8 +123,13 @@ async def upload_video(
         result = pose_service.process_cricket_video(
             input_path=temp_path,
             sport=sport,
+            shot_type=shot_type,
         )
 
+        # ── Extract detailed analysis data ────────────────────
+        detailed = result.get("detailed_analysis", {})
+        shot_info = result.get("shot_classification", {})
+        
         # ── Build response ────────────────────────────────────
         response = {
             "status": "success",
@@ -134,6 +143,8 @@ async def upload_video(
                 ),
                 "sport": sport,
                 "shot_type": shot_type,
+                
+                # ── Core Stats ──────────────────────────────
                 "stats": {
                     "total_frames": result["total_frames"],
                     "frames_with_pose": result["frames_with_pose"],
@@ -145,6 +156,26 @@ async def upload_video(
                     "duration_seconds": result["video_info"]["duration_seconds"],
                     "posture_error_rate": result.get("posture_error_rate", 0.0),
                 },
+                
+                # ── NEW: Shot Classification ────────────────
+                "shot_classification": {
+                    "detected_shot": shot_info.get("detected_shot", "other"),
+                    "display_name": shot_info.get("display_name", "Cricket Shot"),
+                    "icon": shot_info.get("icon", "🏏"),
+                    "confidence": shot_info.get("confidence", 0.0),
+                    "method": shot_info.get("method", "unknown"),
+                },
+                
+                # ── NEW: Detailed Analysis ──────────────────
+                "analysis": {
+                    "overall_score": detailed.get("overall_score", 0.0),
+                    "performance_grade": detailed.get("performance_grade", "N/A"),
+                    "joint_details": detailed.get("joint_details", []),
+                    "coaching_tips": detailed.get("coaching_tips", []),
+                },
+                
+                # ── NEW: Angle Timeline (for sparklines) ────
+                "angle_timeline": result.get("angle_timeline", {}),
             },
         }
 

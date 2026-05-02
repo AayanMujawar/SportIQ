@@ -1,41 +1,16 @@
 /**
- * SportIQ — Frontend Application
- * Handles video upload, API communication, and result display
- * for the AI-Powered Cricket Performance Analyzer.
+ * SportIQ — Frontend Application (50% Project Dashboard)
  */
 
-// ═══════════════════════════════════════════════════════════════
-//  Configuration
-// ═══════════════════════════════════════════════════════════════
-
 const CONFIG = {
-  // Change this URL to your Render deployment URL in production
-  // e.g., 'https://sportiq-backend.onrender.com'
   API_BASE_URL: 'http://localhost:8000',
   API_PREFIX: '/api/v1',
   MAX_FILE_SIZE_MB: 50,
   MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024,
   ALLOWED_EXTENSIONS: ['.mp4', '.avi', '.mov', '.webm', '.mkv'],
-  ALLOWED_MIME_TYPES: [
-    'video/mp4', 'video/avi', 'video/x-msvideo',
-    'video/quicktime', 'video/webm', 'video/x-matroska'
-  ],
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  State Management
-// ═══════════════════════════════════════════════════════════════
-
-const state = {
-  selectedFile: null,
-  isProcessing: false,
-  currentSection: 'upload', // 'upload' | 'processing' | 'results'
-};
-
-// ═══════════════════════════════════════════════════════════════
-//  DOM Elements
-// ═══════════════════════════════════════════════════════════════
-
+const state = { selectedFile: null, isProcessing: false, currentSection: 'upload', lastResultData: null };
 const DOM = {};
 
 function cacheDOMElements() {
@@ -63,117 +38,53 @@ function cacheDOMElements() {
   DOM.statFps = document.getElementById('stat-fps');
   DOM.newAnalysisBtn = document.getElementById('new-analysis-btn');
   DOM.toastContainer = document.getElementById('toast-container');
+  DOM.dashShotIcon = document.getElementById('dash-shot-icon');
+  DOM.dashShotName = document.getElementById('dash-shot-name');
+  DOM.dashShotMethod = document.getElementById('dash-shot-method');
+  DOM.gaugeCanvas = document.getElementById('gauge-canvas');
+  DOM.gaugeValue = document.getElementById('gauge-value');
+  DOM.gradeLetter = document.getElementById('grade-letter');
+  DOM.jointBarsContainer = document.getElementById('joint-bars-container');
+  DOM.radarCanvas = document.getElementById('radar-canvas');
+  DOM.coachingGrid = document.getElementById('coaching-grid');
+  DOM.timelinePanel = document.getElementById('timeline-panel');
+  DOM.syncPlayBtn = document.getElementById('sync-play-btn');
+  DOM.downloadReportBtn = document.getElementById('download-report-btn');
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  Event Listeners
-// ═══════════════════════════════════════════════════════════════
 
 function initEventListeners() {
-  // ── Navbar scroll effect ────────────────────────────────
-  window.addEventListener('scroll', () => {
-    DOM.navbar.classList.toggle('scrolled', window.scrollY > 50);
-  });
-
-  // ── Smooth scroll for nav links ─────────────────────────
+  window.addEventListener('scroll', () => DOM.navbar.classList.toggle('scrolled', window.scrollY > 50));
   document.querySelectorAll('a[href^="#"]').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = document.querySelector(link.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
+    link.addEventListener('click', (e) => { e.preventDefault(); const t = document.querySelector(link.getAttribute('href')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   });
-
-  // ── Drop Zone: Click to browse ──────────────────────────
-  DOM.dropZone.addEventListener('click', () => {
-    DOM.fileInput.click();
-  });
-
-  // ── Drop Zone: Drag & Drop ──────────────────────────────
-  DOM.dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    DOM.dropZone.classList.add('drag-over');
-  });
-
-  DOM.dropZone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    DOM.dropZone.classList.remove('drag-over');
-  });
-
-  DOM.dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    DOM.dropZone.classList.remove('drag-over');
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileSelection(files[0]);
-    }
-  });
-
-  // ── File Input Change ───────────────────────────────────
-  DOM.fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      handleFileSelection(e.target.files[0]);
-    }
-  });
-
-  // ── Remove File ─────────────────────────────────────────
-  DOM.fileRemoveBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    clearFileSelection();
-  });
-
-  // ── Upload Button ───────────────────────────────────────
-  DOM.uploadBtn.addEventListener('click', () => {
-    if (state.selectedFile && !state.isProcessing) {
-      uploadAndProcess();
-    }
-  });
-
-  // ── New Analysis Button ─────────────────────────────────
-  DOM.newAnalysisBtn.addEventListener('click', () => {
-    resetToUpload();
-  });
+  DOM.dropZone.addEventListener('click', () => DOM.fileInput.click());
+  DOM.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); DOM.dropZone.classList.add('drag-over'); });
+  DOM.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('drag-over'); });
+  DOM.dropZone.addEventListener('drop', (e) => { e.preventDefault(); DOM.dropZone.classList.remove('drag-over'); if (e.dataTransfer.files.length > 0) handleFileSelection(e.dataTransfer.files[0]); });
+  DOM.fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFileSelection(e.target.files[0]); });
+  DOM.fileRemoveBtn.addEventListener('click', (e) => { e.stopPropagation(); clearFileSelection(); });
+  DOM.uploadBtn.addEventListener('click', () => { if (state.selectedFile && !state.isProcessing) uploadAndProcess(); });
+  DOM.newAnalysisBtn.addEventListener('click', () => resetToUpload());
+  DOM.syncPlayBtn.addEventListener('click', () => syncPlayVideos());
+  DOM.downloadReportBtn.addEventListener('click', () => downloadReport());
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  File Handling
-// ═══════════════════════════════════════════════════════════════
-
 function handleFileSelection(file) {
-  // Validate file type
   const ext = '.' + file.name.split('.').pop().toLowerCase();
-  if (!CONFIG.ALLOWED_EXTENSIONS.includes(ext)) {
-    showToast(`Invalid file type: ${ext}. Supported: ${CONFIG.ALLOWED_EXTENSIONS.join(', ')}`, 'error');
-    return;
-  }
-
-  // Validate file size
-  if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) {
-    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-    showToast(`File too large: ${sizeMB}MB. Max: ${CONFIG.MAX_FILE_SIZE_MB}MB`, 'error');
-    return;
-  }
-
+  if (!CONFIG.ALLOWED_EXTENSIONS.includes(ext)) { showToast(`Invalid file type: ${ext}`, 'error'); return; }
+  if (file.size > CONFIG.MAX_FILE_SIZE_BYTES) { showToast(`File too large: ${(file.size/1024/1024).toFixed(1)}MB`, 'error'); return; }
   state.selectedFile = file;
-
-  // Update UI
   DOM.filePreviewName.textContent = file.name;
   DOM.filePreviewSize.textContent = formatFileSize(file.size);
   DOM.filePreview.classList.add('visible');
   DOM.uploadBtn.disabled = false;
   DOM.dropZone.style.display = 'none';
-
   showToast(`Selected: ${file.name}`, 'success');
 }
 
 function clearFileSelection() {
-  state.selectedFile = null;
-  DOM.fileInput.value = '';
-  DOM.filePreview.classList.remove('visible');
-  DOM.uploadBtn.disabled = true;
-  DOM.dropZone.style.display = 'block';
+  state.selectedFile = null; DOM.fileInput.value = '';
+  DOM.filePreview.classList.remove('visible'); DOM.uploadBtn.disabled = true; DOM.dropZone.style.display = 'block';
 }
 
 function formatFileSize(bytes) {
@@ -182,332 +93,406 @@ function formatFileSize(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Upload & Processing
-// ═══════════════════════════════════════════════════════════════
-
 async function uploadAndProcess() {
   if (!state.selectedFile || state.isProcessing) return;
-
   state.isProcessing = true;
   showSection('processing');
-
   const formData = new FormData();
   formData.append('file', state.selectedFile);
   formData.append('sport', DOM.sportSelect.value);
   formData.append('shot_type', DOM.shotSelect.value);
-
-  // Simulate progress stages
-  const progressStages = [
-    { percent: 10, text: 'Uploading video to server...' },
-    { percent: 25, text: 'Initializing MediaPipe pose model...' },
-    { percent: 40, text: 'Analyzing body pose frame by frame...' },
-    { percent: 60, text: 'Drawing skeleton overlay...' },
-    { percent: 75, text: 'Extracting keypoint coordinates...' },
-    { percent: 85, text: 'Rendering output video...' },
+  const stages = [
+    { percent: 10, text: 'Uploading video to server...' }, { percent: 30, text: 'Initializing MediaPipe pose model...' },
+    { percent: 50, text: 'Analyzing body pose frame by frame...' }, { percent: 70, text: 'Calculating joint angle deviations...' },
+    { percent: 85, text: 'Generating coaching tips & injury prevention...' }, { percent: 90, text: 'Rendering output video...' },
     { percent: 95, text: 'Finalizing results...' },
   ];
-
-  // Start progress simulation
-  let stageIndex = 0;
-  const progressInterval = setInterval(() => {
-    if (stageIndex < progressStages.length) {
-      const stage = progressStages[stageIndex];
-      updateProgress(stage.percent, stage.text);
-      stageIndex++;
-    }
-  }, 2500);
-
+  let si = 0;
+  const pi = setInterval(() => { if (si < stages.length) { updateProgress(stages[si].percent, stages[si].text); si++; } }, 2500);
   try {
     updateProgress(5, 'Connecting to server...');
-
-    const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.API_PREFIX}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    clearInterval(progressInterval);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ detail: { message: 'Unknown error' } }));
-      throw new Error(errorData.detail?.message || `Server error: ${response.status}`);
-    }
-
+    const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.API_PREFIX}/upload`, { method: 'POST', body: formData });
+    clearInterval(pi);
+    if (!response.ok) { const ed = await response.json().catch(() => ({ detail: { message: 'Unknown error' } })); throw new Error(ed.detail?.message || `Server error: ${response.status}`); }
     const result = await response.json();
-
     if (result.status === 'success') {
       updateProgress(100, 'Complete!');
-      
-      // Short delay to show 100% completion
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      await new Promise(r => setTimeout(r, 800));
       displayResults(result.data);
-      showToast('🏏 Video processed successfully!', 'success');
-    } else {
-      throw new Error(result.message || 'Processing failed');
-    }
-
+      showToast('🏏 Video analyzed successfully!', 'success');
+    } else { throw new Error(result.message || 'Processing failed'); }
   } catch (error) {
-    clearInterval(progressInterval);
-    console.error('Upload error:', error);
-
-    let errorMsg = error.message;
-    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      errorMsg = 'Cannot connect to server. Make sure the backend is running on ' + CONFIG.API_BASE_URL;
-    }
-
-    showToast(`Error: ${errorMsg}`, 'error');
-    
-    // Instead of hiding everything, show the error clearly on screen
-    DOM.processingStatus.innerHTML = `<span style="color: var(--accent-red); font-weight: bold;">❌ Error: ${errorMsg}</span>`;
+    clearInterval(pi); console.error('Upload error:', error);
+    let msg = error.message;
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) msg = 'Cannot connect to server. Make sure backend is running on ' + CONFIG.API_BASE_URL;
+    showToast(`Error: ${msg}`, 'error');
+    DOM.processingStatus.innerHTML = `<span style="color: var(--accent-red); font-weight: bold;">❌ Error: ${msg}</span>`;
     DOM.progressBar.style.background = 'var(--accent-red)';
-    
-    // Give user a button to go back
     if (!document.getElementById('error-back-btn')) {
-      const backBtn = document.createElement('button');
-      backBtn.id = 'error-back-btn';
-      backBtn.className = 'btn btn-secondary';
-      backBtn.style.marginTop = '20px';
-      backBtn.innerHTML = '← Try Again';
-      backBtn.onclick = () => {
-        backBtn.remove();
-        DOM.progressBar.style.background = '';
-        resetToUpload();
-      };
-      DOM.processingSection.appendChild(backBtn);
+      const b = document.createElement('button'); b.id = 'error-back-btn'; b.className = 'btn btn-secondary'; b.style.marginTop = '20px'; b.innerHTML = '← Try Again';
+      b.onclick = () => { b.remove(); DOM.progressBar.style.background = ''; resetToUpload(); }; DOM.processingSection.appendChild(b);
     }
-  } finally {
-    state.isProcessing = false;
-  }
+  } finally { state.isProcessing = false; }
 }
 
-function updateProgress(percent, statusText) {
-  DOM.progressBar.style.width = `${percent}%`;
-  if (statusText) {
-    DOM.processingStatus.textContent = statusText;
-  }
-}
+function updateProgress(p, t) { DOM.progressBar.style.width = `${p}%`; if (t) DOM.processingStatus.textContent = t; }
 
 // ═══════════════════════════════════════════════════════════════
-//  Results Display
+//  Results Dashboard
 // ═══════════════════════════════════════════════════════════════
 
 function displayResults(data) {
-  // Set original video (from local file)
+  state.lastResultData = data;
+
+  // Videos
   if (state.selectedFile) {
-    const objectURL = URL.createObjectURL(state.selectedFile);
-    DOM.originalVideo.src = objectURL;
-    DOM.originalVideo.style.display = 'block';
-      const placeholder = DOM.originalVideo.parentElement.querySelector('.video-placeholder');
-      if (placeholder) placeholder.style.display = 'none';
-    }
-
-  // Set processed video (from server)
+    const url = URL.createObjectURL(state.selectedFile);
+    DOM.originalVideo.src = url; DOM.originalVideo.style.display = 'block';
+    const p = DOM.originalVideo.parentElement.querySelector('.video-placeholder'); if (p) p.style.display = 'none';
+  }
   if (data.video_url) {
-    const videoURL = `${CONFIG.API_BASE_URL}${data.video_url}`;
-    DOM.processedVideo.src = videoURL;
+    DOM.processedVideo.src = `${CONFIG.API_BASE_URL}${data.video_url}`;
     DOM.processedVideo.style.display = 'block';
-      const placeholder = DOM.processedVideo.parentElement.querySelector('.video-placeholder');
-      if (placeholder) placeholder.style.display = 'none';
-    }
+    const p = DOM.processedVideo.parentElement.querySelector('.video-placeholder'); if (p) p.style.display = 'none';
+  }
 
-  // Update stats with count-up animation
+  // Shot classification
+  const shot = data.shot_classification || {};
+  DOM.dashShotIcon.textContent = shot.icon || '🏏';
+  DOM.dashShotName.textContent = shot.display_name || 'Cricket Shot';
+  DOM.dashShotMethod.textContent = shot.method === 'auto_detected' ? `AI Detected • ${Math.round((shot.confidence||0)*100)}% confidence` : 'User Selected';
+
+  // Performance grade
+  const analysis = data.analysis || {};
+  const grade = analysis.performance_grade || 'N/A';
+  DOM.gradeLetter.textContent = grade;
+  DOM.gradeLetter.className = 'grade-letter';
+  if (grade.startsWith('A')) DOM.gradeLetter.classList.add('grade-a');
+  else if (grade.startsWith('B')) DOM.gradeLetter.classList.add('grade-b');
+  else if (grade.startsWith('C')) DOM.gradeLetter.classList.add('grade-c');
+  else if (grade.startsWith('D')) DOM.gradeLetter.classList.add('grade-d');
+  else DOM.gradeLetter.classList.add('grade-f');
+
+  // Score gauge
+  const score = analysis.overall_score || 0;
+  animateGauge(score);
+
+  // Stats
   const stats = data.stats;
   if (stats) {
-    if (DOM.statErrorRate) animateValue(DOM.statErrorRate, 0, stats.posture_error_rate || 0, 1000, '%');
+    animateValue(DOM.statErrorRate, 0, stats.posture_error_rate || 0, 1000, '%');
     animateValue(DOM.statFrames, 0, stats.total_frames || 0, 1000);
     animateValue(DOM.statDetection, 0, stats.detection_rate_percent || 0, 1000, '%');
     animateValue(DOM.statTime, 0, stats.processing_time_seconds || 0, 1000, 's');
     animateValue(DOM.statFps, 0, stats.fps || 0, 800);
   }
 
+  // Joint bars
+  renderJointBars(analysis.joint_details || []);
+
+  // Radar chart
+  renderRadarChart(analysis.joint_details || []);
+
+  // Coaching tips
+  renderCoachingTips(analysis.coaching_tips || []);
+
+  // Timeline
+  renderTimeline(data.angle_timeline || {});
+
   showSection('results');
-
-  // Scroll to results
-  setTimeout(() => {
-    DOM.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 200);
+  setTimeout(() => DOM.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
 }
 
-function animateValue(element, start, end, duration, suffix = '') {
+// ── Animated Gauge ───────────────────────────────────────────
+
+function animateGauge(targetScore) {
+  const canvas = DOM.gaugeCanvas;
+  const ctx = canvas.getContext('2d');
+  const cx = 90, cy = 90, r = 72, lw = 10;
+  const startAngle = 0.75 * Math.PI;
+  const fullArc = 1.5 * Math.PI;
+  let current = 0;
+  const duration = 1200;
   const startTime = performance.now();
-  const isFloat = !Number.isInteger(end);
 
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
+  function getColor(v) {
+    if (v >= 80) return '#22c55e';
+    if (v >= 60) return '#00d4aa';
+    if (v >= 40) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  function draw(now) {
+    const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    
-    // Ease out cubic
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = start + (end - start) * eased;
+    current = targetScore * (1 - Math.pow(1 - progress, 3));
+    ctx.clearRect(0, 0, 180, 180);
 
-    element.textContent = (isFloat ? current.toFixed(1) : Math.round(current)) + suffix;
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, startAngle + fullArc);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
 
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    }
+    // Colored arc
+    const endAngle = startAngle + (current / 100) * fullArc;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.strokeStyle = getColor(current);
+    ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.stroke();
+
+    DOM.gaugeValue.textContent = Math.round(current) + '%';
+    DOM.gaugeValue.style.color = getColor(current);
+
+    if (progress < 1) requestAnimationFrame(draw);
   }
-
-  requestAnimationFrame(update);
+  requestAnimationFrame(draw);
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Section Navigation
-// ═══════════════════════════════════════════════════════════════
+// ── Joint Progress Bars ──────────────────────────────────────
 
-function showSection(section) {
-  state.currentSection = section;
-
-  DOM.uploadSection.style.display = section === 'upload' ? 'block' : 'none';
-  DOM.processingSection.classList.toggle('visible', section === 'processing');
-  DOM.resultsSection.classList.toggle('visible', section === 'results');
-
-  if (section === 'processing') {
-    DOM.processingSection.style.display = 'block';
-    DOM.resultsSection.style.display = 'none';
-  } else if (section === 'results') {
-    DOM.processingSection.style.display = 'none';
-    DOM.resultsSection.style.display = 'block';
-  } else {
-    DOM.processingSection.style.display = 'none';
-    DOM.resultsSection.style.display = 'none';
-  }
-}
-
-function resetToUpload() {
-  // Revoke object URLs to free memory
-  if (DOM.originalVideo.src) {
-    URL.revokeObjectURL(DOM.originalVideo.src);
-    DOM.originalVideo.src = '';
-    DOM.originalVideo.style.display = 'none';
-  }
-  DOM.processedVideo.src = '';
-  DOM.processedVideo.style.display = 'none';
-
-  // Restore placeholders
-  const origPlaceholder = DOM.originalVideo.parentElement.querySelector('.video-placeholder');
-  if (origPlaceholder) origPlaceholder.style.display = 'block';
-  
-  const procPlaceholder = DOM.processedVideo.parentElement.querySelector('.video-placeholder');
-  if (procPlaceholder) procPlaceholder.style.display = 'block';
-
-  // Reset stats
-  if (DOM.statErrorRate) DOM.statErrorRate.textContent = '0%';
-  DOM.statFrames.textContent = '0';
-  DOM.statDetection.textContent = '0%';
-  DOM.statTime.textContent = '0s';
-  DOM.statFps.textContent = '0';
-
-  // Reset progress
-  updateProgress(0, '');
-
-  // Reset file selection
-  clearFileSelection();
-
-  // Show upload section
-  showSection('upload');
-
-  // Scroll to upload
-  DOM.uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  Toast Notifications
-// ═══════════════════════════════════════════════════════════════
-
-function showToast(message, type = 'info') {
-  const icons = {
-    success: '✅',
-    error: '❌',
-    info: 'ℹ️',
-  };
-
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <span>${icons[type] || icons.info}</span>
-    <span>${message}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-  `;
-
-  DOM.toastContainer.appendChild(toast);
-
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    if (toast.parentElement) {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100px)';
-      toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }
-  }, 5000);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  Intersection Observer (Scroll Animations)
-// ═══════════════════════════════════════════════════════════════
-
-function initScrollAnimations() {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.1 }
-  );
-
-  document.querySelectorAll('.feature-card, .upload-card').forEach((el) => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(el);
+function renderJointBars(joints) {
+  DOM.jointBarsContainer.innerHTML = '';
+  if (!joints.length) { DOM.jointBarsContainer.innerHTML = '<div class="joint-bars-placeholder">No joint data available</div>'; return; }
+  joints.forEach((j, i) => {
+    const item = document.createElement('div');
+    item.className = 'joint-bar-item';
+    item.innerHTML = `
+      <div class="joint-bar-label"><span class="joint-icon">${j.icon}</span> ${j.joint_label}</div>
+      <div class="joint-bar-track"><div class="joint-bar-fill ${j.status}" id="jbar-${i}"></div></div>
+      <div class="joint-bar-value">${j.score_percent}%</div>
+    `;
+    DOM.jointBarsContainer.appendChild(item);
+    setTimeout(() => { document.getElementById(`jbar-${i}`).style.width = j.score_percent + '%'; }, 100 + i * 80);
   });
 }
 
-// Add the animate-in styles dynamically
-const style = document.createElement('style');
-style.textContent = `
-  .animate-in {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
+// ── Radar Chart ──────────────────────────────────────────────
+
+function renderRadarChart(joints) {
+  const canvas = DOM.radarCanvas;
+  const ctx = canvas.getContext('2d');
+  const cx = 160, cy = 160, maxR = 120;
+  ctx.clearRect(0, 0, 320, 320);
+
+  if (!joints.length) return;
+
+  const n = joints.length;
+  const angleStep = (2 * Math.PI) / n;
+
+  // Draw grid rings
+  for (let ring = 1; ring <= 4; ring++) {
+    const rr = (maxR / 4) * ring;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = -Math.PI / 2 + i * angleStep;
+      const x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1; ctx.stroke();
   }
-`;
+
+  // Draw axis lines & labels
+  joints.forEach((j, i) => {
+    const a = -Math.PI / 2 + i * angleStep;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + maxR * Math.cos(a), cy + maxR * Math.sin(a));
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+
+    const lx = cx + (maxR + 20) * Math.cos(a), ly = cy + (maxR + 20) * Math.sin(a);
+    ctx.fillStyle = '#8b95a8'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const shortName = j.joint_label.replace('Left ', 'L.').replace('Right ', 'R.');
+    ctx.fillText(shortName, lx, ly);
+  });
+
+  // Draw data polygon
+  ctx.beginPath();
+  joints.forEach((j, i) => {
+    const a = -Math.PI / 2 + i * angleStep;
+    const val = (j.score_percent / 100) * maxR;
+    const x = cx + val * Math.cos(a), y = cy + val * Math.sin(a);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0, 212, 170, 0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#00d4aa';
+  ctx.lineWidth = 2; ctx.stroke();
+
+  // Draw data points
+  joints.forEach((j, i) => {
+    const a = -Math.PI / 2 + i * angleStep;
+    const val = (j.score_percent / 100) * maxR;
+    const x = cx + val * Math.cos(a), y = cy + val * Math.sin(a);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.fillStyle = '#00d4aa'; ctx.fill();
+    ctx.strokeStyle = '#06070a'; ctx.lineWidth = 2; ctx.stroke();
+  });
+}
+
+// ── Coaching Tips ────────────────────────────────────────────
+
+function renderCoachingTips(tips) {
+  DOM.coachingGrid.innerHTML = '';
+  if (!tips.length) { DOM.coachingGrid.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No coaching tips available</p>'; return; }
+  tips.forEach(t => {
+    const card = document.createElement('div');
+    card.className = `coaching-card severity-${t.severity}`;
+    card.innerHTML = `
+      <div class="coaching-card-header">
+        <span class="coaching-card-icon">${t.icon}</span>
+        <span class="coaching-card-joint">${t.joint_label}</span>
+        <span class="coaching-card-severity ${t.severity}">${t.severity === 'high' ? 'Needs Work' : t.severity === 'medium' ? 'Almost There' : 'Good Form'}</span>
+      </div>
+      <p class="coaching-card-tip">${t.tip}</p>
+    `;
+    DOM.coachingGrid.appendChild(card);
+  });
+}
+
+// ── Angle Timeline Sparklines ────────────────────────────────
+
+function renderTimeline(timeline) {
+  DOM.timelinePanel.innerHTML = '';
+  const joints = Object.keys(timeline);
+  if (!joints.length) { DOM.timelinePanel.innerHTML = '<p style="color:var(--text-muted);text-align:center;grid-column:1/-1;">No timeline data available</p>'; return; }
+
+  const LABEL_MAP = {
+    left_elbow: 'Left Elbow', right_elbow: 'Right Elbow', left_knee: 'Left Knee', right_knee: 'Right Knee',
+    left_shoulder: 'Left Shoulder', right_shoulder: 'Right Shoulder', left_hip: 'Left Hip', right_hip: 'Right Hip',
+  };
+  const COLORS = ['#00d4aa','#6366f1','#f59e0b','#ef4444','#00e5ff','#22c55e','#f97316','#a855f7'];
+
+  joints.forEach((joint, idx) => {
+    const points = timeline[joint];
+    if (!points || points.length < 2) return;
+
+    const card = document.createElement('div');
+    card.className = 'timeline-card';
+    const label = LABEL_MAP[joint] || joint.replace(/_/g, ' ');
+    card.innerHTML = `<div class="timeline-card-label">${label}</div><canvas id="tl-${joint}" height="60"></canvas>`;
+    DOM.timelinePanel.appendChild(card);
+
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById(`tl-${joint}`);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      const w = canvas.width, h = 60;
+      const vals = points.map(p => p.value);
+      const minV = Math.min(...vals), maxV = Math.max(...vals);
+      const range = maxV - minV || 1;
+      const color = COLORS[idx % COLORS.length];
+
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = (i / (points.length - 1)) * w;
+        const y = h - 6 - ((p.value - minV) / range) * (h - 12);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+
+      // Fill below
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, color + '30'); grad.addColorStop(1, color + '05');
+      ctx.fillStyle = grad; ctx.fill();
+    });
+  });
+}
+
+// ── Video Sync ───────────────────────────────────────────────
+
+function syncPlayVideos() {
+  const v1 = DOM.originalVideo, v2 = DOM.processedVideo;
+  if (!v1.src || !v2.src) { showToast('Both videos must be loaded', 'error'); return; }
+  v1.currentTime = 0; v2.currentTime = 0;
+  v1.play(); v2.play();
+  showToast('▶️ Playing both videos in sync', 'info');
+}
+
+// ── Download Report ──────────────────────────────────────────
+
+function downloadReport() {
+  if (!state.lastResultData) { showToast('No results to download', 'error'); return; }
+  const report = {
+    project: 'SportIQ — Cricket Performance Analysis Report',
+    generated_at: new Date().toISOString(),
+    shot_classification: state.lastResultData.shot_classification,
+    performance: state.lastResultData.analysis,
+    stats: state.lastResultData.stats,
+    angle_timeline: state.lastResultData.angle_timeline,
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'sportiq_report.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 Report downloaded!', 'success');
+}
+
+// ── Utilities ────────────────────────────────────────────────
+
+function animateValue(el, start, end, dur, suffix = '') {
+  const st = performance.now(); const isF = !Number.isInteger(end);
+  function update(ct) {
+    const p = Math.min((ct - st) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = (isF ? (start + (end - start) * e).toFixed(1) : Math.round(start + (end - start) * e)) + suffix;
+    if (p < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function showSection(section) {
+  state.currentSection = section;
+  DOM.uploadSection.style.display = section === 'upload' ? 'block' : 'none';
+  DOM.processingSection.classList.toggle('visible', section === 'processing');
+  DOM.resultsSection.classList.toggle('visible', section === 'results');
+  DOM.processingSection.style.display = section === 'processing' ? 'block' : 'none';
+  DOM.resultsSection.style.display = section === 'results' ? 'block' : 'none';
+}
+
+function resetToUpload() {
+  if (DOM.originalVideo.src) { URL.revokeObjectURL(DOM.originalVideo.src); DOM.originalVideo.src = ''; DOM.originalVideo.style.display = 'none'; }
+  DOM.processedVideo.src = ''; DOM.processedVideo.style.display = 'none';
+  const op = DOM.originalVideo.parentElement.querySelector('.video-placeholder'); if (op) op.style.display = 'block';
+  const pp = DOM.processedVideo.parentElement.querySelector('.video-placeholder'); if (pp) pp.style.display = 'block';
+  if (DOM.statErrorRate) DOM.statErrorRate.textContent = '0%';
+  DOM.statFrames.textContent = '0'; DOM.statDetection.textContent = '0%'; DOM.statTime.textContent = '0s'; DOM.statFps.textContent = '0';
+  DOM.gaugeValue.textContent = '0%'; DOM.gradeLetter.textContent = '—';
+  DOM.jointBarsContainer.innerHTML = '<div class="joint-bars-placeholder">Processing joint data...</div>';
+  DOM.coachingGrid.innerHTML = ''; DOM.timelinePanel.innerHTML = '';
+  state.lastResultData = null;
+  updateProgress(0, ''); clearFileSelection(); showSection('upload');
+  DOM.uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showToast(message, type = 'info') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+  DOM.toastContainer.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; toast.style.transition = 'all 0.3s ease'; setTimeout(() => toast.remove(), 300); } }, 5000);
+}
+
+function initScrollAnimations() {
+  const obs = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('animate-in'); obs.unobserve(e.target); } }); }, { threshold: 0.1 });
+  document.querySelectorAll('.feature-card, .upload-card').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; el.style.transition = 'opacity 0.6s ease, transform 0.6s ease'; obs.observe(el); });
+}
+
+const style = document.createElement('style');
+style.textContent = `.animate-in { opacity: 1 !important; transform: translateY(0) !important; }`;
 document.head.appendChild(style);
 
-// ═══════════════════════════════════════════════════════════════
-//  API Health Check
-// ═══════════════════════════════════════════════════════════════
-
 async function checkBackendStatus() {
-  try {
-    const response = await fetch(`${CONFIG.API_BASE_URL}/health`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (response.ok) {
-      console.log('✅ SportIQ backend connected');
-      return true;
-    }
-  } catch (e) {
-    console.warn('⚠️ Backend not reachable at', CONFIG.API_BASE_URL);
-    console.warn('   Start the backend: cd backend && uvicorn main:app --reload');
-  }
+  try { const r = await fetch(`${CONFIG.API_BASE_URL}/health`, { signal: AbortSignal.timeout(5000) }); if (r.ok) { console.log('✅ SportIQ backend connected'); return true; } } catch (e) { console.warn('⚠️ Backend not reachable at', CONFIG.API_BASE_URL); }
   return false;
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Initialize
-// ═══════════════════════════════════════════════════════════════
-
 document.addEventListener('DOMContentLoaded', () => {
-  cacheDOMElements();
-  initEventListeners();
-  initScrollAnimations();
-  checkBackendStatus();
-
+  cacheDOMElements(); initEventListeners(); initScrollAnimations(); checkBackendStatus();
   console.log('🏏 SportIQ — Cricket Shot Analyzer initialized');
-  console.log(`   API: ${CONFIG.API_BASE_URL}`);
 });
